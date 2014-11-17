@@ -63,11 +63,19 @@ void mechFree(Mechanism* d) {
 	  freeFuncPtr funct = d->class->delete;
 	  if (funct) {
 			(funct)(d);
-	  } else {
-  		// WARNING: Class does not contain a delete
 	  }
+	  #ifdef DEVELOPMENT
+	  else {
+	  	assert("Class does not contain a delete.")
+	  }
+	  #endif
 	  free(d);
 	}
+	#ifdef DEVELOPMENT
+	else {
+	  assert("Attempted to free NULL.")
+	}
+	#endif
 }
 
 // ----------------------------------------------------------------------------
