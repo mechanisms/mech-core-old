@@ -19,7 +19,6 @@ typedef void (*freeFuncPtr)(Mechanism*);
 //   1 - goDouble
 //   2 - ????
 typedef struct {
-	int id;
 	freeFuncPtr delete;
 	void* lookup[];
 } Class;
@@ -90,7 +89,7 @@ float numGoFloat(Mechanism* mech) {
 	return (float)data->val;
 };
 
-Class numClass = { 1, &numFree, { &numGoLong, &numGoFloat} };
+Class numClass = { &numFree, { &numGoLong, &numGoFloat} };
 
 Mechanism* num(long d) {
 	Mechanism* mech = malloc(sizeof(Mechanism));
@@ -161,7 +160,7 @@ float addGoFloat(Mechanism* mech) {
 	}
 };
 
-Class addClass = { 2, &dualArgFree, { &addGoLong, &addGoFloat} };
+Class addClass = { &dualArgFree, { &addGoLong, &addGoFloat} };
 
 Mechanism* add(Mechanism* left, Mechanism* right) {
 	Mechanism* mech = malloc(sizeof(Mechanism));
@@ -203,7 +202,7 @@ float writeLnGoFloat(Mechanism* mech) {
 	}
 };
 
-Class writeLnClass = { 2, &singleArgFree, { &writeLnGoLong, &writeLnGoFloat} };
+Class writeLnClass = { &singleArgFree, { &writeLnGoLong, &writeLnGoFloat} };
 
 Mechanism* writeLn(Mechanism* text) {
 	Mechanism* mech = malloc(sizeof(Mechanism));
