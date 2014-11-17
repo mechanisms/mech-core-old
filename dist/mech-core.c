@@ -22,7 +22,7 @@ typedef void (*freeFuncPtr)(Mechanism*);
 //   2 - ????
 typedef struct {
 	int id;
-  freeFuncPtr delete;
+	freeFuncPtr delete;
 	void* lookup[];
 } Class;
 
@@ -31,9 +31,9 @@ typedef struct {
 // parent - contains the parent mechanism instance
 // data - the data for this instance
 struct Mechanism {
-    Class* class;
-    Mechanism* parent;
-    void* data;
+		Class* class;
+		Mechanism* parent;
+		void* data;
 };
 
 // Function signatures
@@ -42,84 +42,84 @@ typedef float (*goFloatFuncPtr)(Mechanism*);
 
 // Run any mechanism as a long
 long goLong(Mechanism* d) {
-  goLongFuncPtr funct = d->class->lookup[0]; // TODO: Check if length of lookup is at least 1
-  if (NULL != funct ){ 
-    return (funct)(d);
-  } else {
-    return 0;
-  }
+	goLongFuncPtr funct = d->class->lookup[0]; // TODO: Check if length of lookup is at least 1
+	if (NULL != funct ){ 
+		return (funct)(d);
+	} else {
+		return 0;
+	}
 }
 
 // Run any mechanism as a float
 float goFloat(Mechanism* d) {
-  goFloatFuncPtr funct = d->class->lookup[1]; // TODO: Check if length of lookup is at least 2
-  if (NULL != funct) {
-    return (funct)(d);
-  } else {
-    return 0;
-  }
+	goFloatFuncPtr funct = d->class->lookup[1]; // TODO: Check if length of lookup is at least 2
+	if (NULL != funct) {
+		return (funct)(d);
+	} else {
+		return 0;
+	}
 }
 
 // Free any mechanism
 void mechFree(Mechanism* d) {
-  freeFuncPtr funct = d->class->delete;
-  if (NULL != funct) {
-    (funct)(d);
-  } else {
-    // WARNING: Class does not contain a delete
-  }
-  free(d);
+	freeFuncPtr funct = d->class->delete;
+	if (NULL != funct) {
+		(funct)(d);
+	} else {
+		// WARNING: Class does not contain a delete
+	}
+	free(d);
 }
 
 // ----------------------------------------------------------------------------
 // Numeric Mechanism
 // ----------------------------------------------------------------------------
 typedef struct {
-  long val;
+	long val;
 } NumData;
 
 void numFree(Mechanism* mech) {
-  free (mech->data);
+	free (mech->data);
 }
 
 long numGoLong(Mechanism* mech) {
-  NumData* data = (NumData*)mech->data;
-  return data->val;
+	NumData* data = (NumData*)mech->data;
+	return data->val;
 };
 
 float numGoFloat(Mechanism* mech) {
-  NumData* data = (NumData*)mech->data;
-  return (float)data->val;
+	NumData* data = (NumData*)mech->data;
+	return (float)data->val;
 };
 
 Class numClass = { 1, &numFree, { &numGoLong, &numGoFloat} };
 
 Mechanism* num(long d) {
-  NumData* data = malloc(sizeof(NumData));
-  data->val = d;
-  Mechanism* mechInstance = malloc(sizeof(Mechanism));
-  mechInstance->class = &numClass;
-  mechInstance->data = data;
-  return mechInstance;
+	NumData* data = malloc(sizeof(NumData));
+	data->val = d;
+	Mechanism* mechInstance = malloc(sizeof(Mechanism));
+	mechInstance->class = &numClass;
+	mechInstance->data = data;
+	return mechInstance;
 }
 
 // ----------------------------------------------------------------------------
 // DualArg base Mechanism
 // ----------------------------------------------------------------------------
 typedef struct {
-  Mechanism* left;
-  Mechanism* right;
+	Mechanism* left;
+	Mechanism* right;
 } DualArgData;
 
 void dualArgFree(Mechanism* mech) {
-  DualArgData* data = (DualArgData*)mech->data;
-  if (NULL != data) {
-    mechFree(data->left);
-    mechFree(data->right);
-  } else {
-    // WARNING!!!
-  }
-  free (mech->data);
+	DualArgData* data = (DualArgData*)mech->data;
+	if (NULL != data) {
+		mechFree(data->left);
+		mechFree(data->right);
+	} else {
+		// WARNING!!!
+	}
+	free (mech->data);
 }
 
 // ----------------------------------------------------------------------------
@@ -127,33 +127,33 @@ void dualArgFree(Mechanism* mech) {
 // ----------------------------------------------------------------------------
 
 long addGoLong(Mechanism* mech) {
-  DualArgData* data = (DualArgData*)mech->data;
-  if (NULL != data) {
-    return goLong(data->left) + goLong(data->right);
-  } else {
-    return 0;
-  }
+	DualArgData* data = (DualArgData*)mech->data;
+	if (NULL != data) {
+		return goLong(data->left) + goLong(data->right);
+	} else {
+		return 0;
+	}
 };
 
 float addGoFloat(Mechanism* mech) {
-  DualArgData* data = (DualArgData*)mech->data;
-  if (NULL != data) {
-    return goFloat(data->left) + goFloat(data->right);
-  } else {
-    return 0;
-  }
+	DualArgData* data = (DualArgData*)mech->data;
+	if (NULL != data) {
+		return goFloat(data->left) + goFloat(data->right);
+	} else {
+		return 0;
+	}
 };
 
 Class addClass = { 2, &dualArgFree, { &addGoLong, &addGoFloat} };
 
 Mechanism* add(Mechanism* left, Mechanism* right) {
-  DualArgData* data = malloc(sizeof(DualArgData));
-  data->left = left;
-  data->right = right;  
-  Mechanism* mechInstance = malloc(sizeof(Mechanism));
-  mechInstance->class = &addClass;
-  mechInstance->data = data;
-  return mechInstance;
+	DualArgData* data = malloc(sizeof(DualArgData));
+	data->left = left;
+	data->right = right;  
+	Mechanism* mechInstance = malloc(sizeof(Mechanism));
+	mechInstance->class = &addClass;
+	mechInstance->data = data;
+	return mechInstance;
 }
 
 
