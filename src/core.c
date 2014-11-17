@@ -53,22 +53,13 @@ float goFloat(Mechanism* d) {
 // Free any mechanism
 void mechFree(Mechanism* d) {
 	if (d) {
+		assert(d->class);
+		assert(d->class->delete);
 	  freeFuncPtr funct = d->class->delete;
-	  if (funct) {
-			(funct)(d);
-	  }
-	  #ifdef DEVELOPMENT
-	  else {
-	  	assert("Class does not contain a delete.")
-	  }
-	  #endif
+		(funct)(d);
 	  free(d);
 	}
-	#ifdef DEVELOPMENT
-	else {
-	  assert("Attempted to free NULL.")
-	}
-	#endif
+	assert(d); // For development
 }
 
 // ----------------------------------------------------------------------------
