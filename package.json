@@ -11,6 +11,9 @@
   "source": [
     "src/util/header.c",
     "src/core.c",
+    "src/num.c",
+    "src/add.c",
+    "src/writeLn.c",
     "src/util/footer.c"
   ],
   "repository": {

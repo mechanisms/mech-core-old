@@ -6,27 +6,38 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// NOTE: About assertions
+//   assert(this->class); // ALL mechanisms must have a class
+//   assert(this->class->delete);; // ALL classes must have delete
+//   assert(this->data); // mechAlloc checks for this->data and this->data should NEVER be null
+//   assert(class->dataSize > 0); // ALL classes must have a non zero data size.
+
 // See Mechanism below
 typedef struct MechanismStruct MechanismStruct;
 
 typedef MechanismStruct* MechanismPtr;
 
-// Function signature to free a mechanism
-typedef void (*freeFuncPtr)(MechanismPtr);
+// Function signatures
+typedef void (*freeFuncPtr)(MechanismPtr); // Free a mechanism
+typedef long (*goLongFuncPtr)(MechanismPtr);
+typedef float (*goFloatFuncPtr)(MechanismPtr);
+// ... Others to come
 
-// Class: Aggregates functions for a given type of Mechanism.
-// id - globally unique identifier for the class
-// delete - function pointer to free memory allocated for this class
-// lookup - lookup table of function pointers.
-//   0 - goLong
-//   1 - goDouble
-//   2 - ????
+// Class: Aggregates functions to define a Mechanism.
+// dataSize: size of data (not including references)
+// Function Pointers:
+// delete
+// goLong
+// goFloat
 typedef struct {
+	int dataSize;
 	freeFuncPtr delete;
-	void* lookup[];
+	goLongFuncPtr goLong;
+  goFloatFuncPtr goFloat;
+	// void* lookup[]; // TODO: Added lookup for extended behavior.
 } Class;
 
-// Mechanism: Instance of a mechanism
+// MechanismStruct: Structure that contains an instance of a mechanism
 // class - the class for this instance
 // parent - contains the parent mechanism instance
 // data - the data for this instance
@@ -36,188 +47,189 @@ struct MechanismStruct {
 	void* data;
 };
 
-// Function signatures
-typedef long (*goLongFuncPtr)(MechanismPtr);
-typedef float (*goFloatFuncPtr)(MechanismPtr);
-
-// Run any mechanism as a long
-long goLong(MechanismPtr mech) {
-	if (mech) {
-		assert(mech->class);
-		assert(mech->class->lookup);
-		assert(mech->class->lookup[0]);
-		goLongFuncPtr funct = mech->class->lookup[0]; // TODO: Check if length of lookup is at least 1
-		return (funct)(mech);
-	} else {
-		return 0; // TODO: NaN for C Lang
+// Free the memory of any mechanism
+void mechFree(MechanismPtr this)
+{
+	if(this) {
+		assert(this->class);
+		assert(this->class->delete);
+		(this->class->delete)(this);
+		free(this);
 	}
 }
 
-// Run any mechanism as a float
-float goFloat(MechanismPtr mech) {
-	if (mech) {
-		assert(mech->class);
-		assert(mech->class->lookup);
-		assert(mech->class->lookup[1]);
-		goFloatFuncPtr funct = mech->class->lookup[1]; // TODO: Check if length of lookup is at least 2
-		return (funct)(mech);
-	} else {
-		return 0.0; // TODO: NaN for C Lang
-	}
+// Allocate memory for any mechanism
+MechanismPtr mechAlloc(Class* class) {
+	MechanismPtr this = NULL;
+	if(class) {
+		this = malloc(sizeof(MechanismStruct));
+		if(this) {
+			assert(class->dataSize > 0);
+			void* data = malloc(class->dataSize);
+			if(data) {
+				this->class = class;
+				this->data = data;
+			} else {
+				free(this); // TODO: Warning that memory allocation failed
+				this = NULL; // TODO: Create a null mechanism
+			}
+		}
+	} // else TODO: Warning class not provided
+	return this;
 }
 
-// Free any mechanism
-void mechFree(MechanismPtr mech) {
-	if (mech) {
-		assert(mech->class);
-		assert(mech->class->delete);
-		freeFuncPtr funct = mech->class->delete;
-		(funct)(mech);
-		free(mech);
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Numeric Mechanism
-// ----------------------------------------------------------------------------
-typedef struct {
-	long val;
-} NumData, *NumDataPtr;
-
-void numFree(MechanismPtr mech) {
-	if (mech && mech->data) {
-		free (mech->data);
-	}
-}
-
-long numGoLong(MechanismPtr mech) {
-	if (mech && mech->data) {
-		NumData* data = (NumData*)mech->data;
-		return data->val;
-	} else {
-		return 0; // TODO: Define NaN
-	}
-};
-
-float numGoFloat(MechanismPtr mech) {
-	if (mech && mech->data) {
-		NumData* data = (NumData*)mech->data;
-		return (float)data->val;
-	} else {
-		return 0; // TODO: Define NaN	
-	}
-};
-
-Class numClass = { &numFree, { &numGoLong, &numGoFloat} };
-
-MechanismPtr num(long d) {
-	MechanismPtr mech = malloc(sizeof(MechanismStruct));
-	if (mech) {
-		NumData* data = malloc(sizeof(NumData));
-		if (data) {
-			data->val = d;
-			mech->class = &numClass;
-			mech->data = data;
-		} else {
-			free(mech); // TODO: Warning on out of memory
-			mech = NULL;
+// Invoke a mechanism as a long primitive
+long goLong(MechanismPtr this)
+{
+	long result = 0; // TODO: NaN for C Lang
+	if(this) {
+		assert(this->class);
+		if(this->class->goLong)	{
+			result = (this->class->goLong)(this);
 		}
 	}
-	return mech;
+	return result; 
 }
 
-// ----------------------------------------------------------------------------
-// SingleArg base Mechanism
-// ----------------------------------------------------------------------------
+// Invoke a mechanism as a float primitive
+float goFloat(MechanismPtr this)
+{
+	float result = 0.0; // TODO: NaN for C Lang
+	if(this) {
+		assert(this->class);
+		if(this->class->goFloat) {
+			result = (this->class->goFloat)(this);
+		}
+	}
+	return result;
+}
+
+// singleArg base Mechanism
 typedef struct {
 	MechanismPtr left;
 } SingleArgData;
 
-void singleArgFree(MechanismPtr mech) {
-	if (mech && mech->data) {
-		SingleArgData* data = (SingleArgData*)mech->data;
-		if (data->left) {
+void singleArgFree(MechanismPtr this)
+{
+	if(this && this->data) {
+		SingleArgData* data = (SingleArgData*)this->data;
+		if(data->left) {
 			mechFree(data->left);
 		}
-		free (mech->data);
-	}
+		free(this->data);
+	} // no else - don't care if try to free empty data
 }
 
-// ----------------------------------------------------------------------------
-// DualArg base Mechanism
-// ----------------------------------------------------------------------------
+// dualArg base Mechanism
 typedef struct {
 	MechanismPtr left;
 	MechanismPtr right;
 } DualArgData;
 
-void dualArgFree(MechanismPtr mech) {
-	if (mech && mech->data) {
-		DualArgData* data = (DualArgData*)mech->data;
-		if (data->left) {
+void dualArgFree(MechanismPtr this)
+{
+	if(this && this->data) {
+		DualArgData* data = (DualArgData*)this->data;
+		if(data->left) {
 			mechFree(data->left);		
 		}
-		if (data->right) {
+		if(data->right) {
 			mechFree(data->right);
 		}
-		free (mech->data);
-	 }
+		free(this->data);
+	} // no else - don't care if try to free empty data
 }
 
-// ----------------------------------------------------------------------------
-// Add Mechanism
-// ----------------------------------------------------------------------------
+// num Mechanism
+typedef struct {
+	long val;
+} NumData;
 
-long addGoLong(MechanismPtr mech) {
-	if (mech && mech->data) {
-		DualArgData* data = (DualArgData*)mech->data;
+void numFree(MechanismPtr this)
+{
+	if(this) {
+		free(this->data);
+	}
+}
+
+long numGoLong(MechanismPtr this)
+{
+	if(this) {
+		assert(this->data);
+		return ((NumData*)this->data)->val;
+	} // else warn on this
+	return 0; // TODO: Define NaN
+};
+
+float numGoFloat(MechanismPtr this)
+{
+	if(this) {
+		assert(this->data);		
+		return (float)((NumData*)this->data)->val;
+	} // else warn on this
+	return 0; // TODO: Define NaN
+};
+
+Class numClass = {sizeof(NumData), &numFree, &numGoLong, &numGoFloat};
+
+MechanismPtr num(long d)
+{
+	MechanismPtr this = mechAlloc(&numClass);
+	if(this) {
+		assert(this->data);
+		((NumData*)this->data)->val = d;
+	} // No else because warning from mechAlloc
+	return this;
+}
+
+// Add Mechanism
+long addGoLong(MechanismPtr this)
+{
+	if(this) {
+		assert(this->data);
+		DualArgData* data = (DualArgData*)this->data;
 		return goLong(data->left) + goLong(data->right);
 	} else {
 		return 0; // TODO: Define NaN	
 	}
 };
 
-float addGoFloat(MechanismPtr mech) {
-	if (mech && mech->data) {
-		DualArgData* data = (DualArgData*)mech->data;
+float addGoFloat(MechanismPtr this)
+{
+	if(this && this->data) {
+		DualArgData* data = (DualArgData*)this->data;
 		return goFloat(data->left) + goFloat(data->right);
 	} else {
 		return 0; // TODO: Define NaN	
 	}
 };
 
-Class addClass = { &dualArgFree, { &addGoLong, &addGoFloat} };
+Class addClass = {sizeof(DualArgData), &dualArgFree, &addGoLong, &addGoFloat};
 
-MechanismPtr add(MechanismPtr left, MechanismPtr right) {
-	MechanismPtr mech = malloc(sizeof(MechanismStruct));
-	if (mech) {
-		DualArgData* data = malloc(sizeof(DualArgData));
-		if (data) {
-			data->left = left;
-			if (left) {
-				left->parent = mech;
-			}
-			data->right = right;  
-			if (right) {
-				right->parent = mech;
-			}
-			mech->class = &addClass;
-			mech->data = data;
-		} else {
-			free(mech); // TODO: Warning that memory allocation failed
-			mech = NULL;
+MechanismPtr add(MechanismPtr left, MechanismPtr right)
+{
+	MechanismPtr this = mechAlloc(&addClass);
+	if(this) {
+		assert(this->data);
+		DualArgData* data = (DualArgData*)this->data;
+		data->left = left;
+		if(left) {
+			left->parent = this;
 		}
-	}
-	return mech;
+		data->right = right;  
+		if(right) {
+			right->parent = this;
+		}
+	} // No else because warning from mechAlloc
+	return this;
 }
 
-// ----------------------------------------------------------------------------
 // writeLn Mechanism
-// ----------------------------------------------------------------------------
-
-long writeLnGoLong(MechanismPtr mech) {
-	if (mech && mech->data) {
-		SingleArgData* data = (SingleArgData*)mech->data;
+long writeLnGoLong(MechanismPtr this)
+{
+	if(this) {
+		assert(this->data);
+		SingleArgData* data = (SingleArgData*)this->data;
 		long result = goLong(data->left);
 		printf("%li\n", result);
 		return result;
@@ -226,9 +238,11 @@ long writeLnGoLong(MechanismPtr mech) {
 	}
 };
 
-float writeLnGoFloat(MechanismPtr mech) {
-	if (mech && mech->data) {	
-		SingleArgData* data = (SingleArgData*)mech->data;
+float writeLnGoFloat(MechanismPtr this)
+{
+	if(this) {
+		assert(this->data);
+		SingleArgData* data = (SingleArgData*)this->data;
 		float result = goFloat(data->left);
 		printf("%f\n", result);
 		return result;
@@ -237,25 +251,20 @@ float writeLnGoFloat(MechanismPtr mech) {
 	}
 };
 
-Class writeLnClass = { &singleArgFree, { &writeLnGoLong, &writeLnGoFloat} };
+Class writeLnClass = {sizeof(SingleArgData), &singleArgFree, &writeLnGoLong, &writeLnGoFloat};
 
-MechanismPtr writeLn(MechanismPtr text) {
-	MechanismPtr mech = malloc(sizeof(MechanismStruct));
-	if (mech) {
-		SingleArgData* data = malloc(sizeof(SingleArgData));
-		if (data) {
-			data->left = text;
-			if (text) {
-				text->parent = mech;
-			}
-			mech->class = &writeLnClass;
-			mech->data = data;
-		} else {
-			free(mech); // TODO: Warning that memory allocation failed
-			mech = NULL;
+MechanismPtr writeLn(MechanismPtr text)
+{
+	MechanismPtr this = mechAlloc(&writeLnClass);
+	if(this) {
+		assert(this->data);
+		SingleArgData* data = (SingleArgData*)this->data;
+		data->left = text;
+		if(text) {
+			text->parent = this;
 		}
 	}
-	return mech;
+	return this;
 }
 
 int main() {

@@ -5,3 +5,4 @@ node_modules
 
 # the output of the compiler
 mech-core
+mech-core.dbg

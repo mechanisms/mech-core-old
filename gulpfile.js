@@ -62,7 +62,8 @@ gulp.task('build', function() {
 		.pipe(replace('{{NAMESUB}}', // update namesub tag in code
 			libSubName))
 		.pipe(gulp.dest('dist')) // dump pkg.name + '.c'
-		.pipe(run('gcc -o ' + libName + ' ./dist/' + libFileName).exec())
+		.pipe(run('gcc -o ' + libName + '.dbg ./dist/' + libFileName).exec())
+		.pipe(run('gcc -o ' + libName + ' -D NDEBUG ./dist/' + libFileName).exec())
 		// .pipe(run('./' + libName))
 		.on('error', gutil.log); // log any errors
 });
