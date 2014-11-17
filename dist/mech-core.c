@@ -28,9 +28,9 @@ typedef struct {
 // parent - contains the parent mechanism instance
 // data - the data for this instance
 struct Mechanism {
-		Class* class;
-		Mechanism* parent;
-		void* data;
+	Class* class;
+	Mechanism* parent;
+	void* data;
 };
 
 // Function signatures
@@ -40,7 +40,7 @@ typedef float (*goFloatFuncPtr)(Mechanism*);
 // Run any mechanism as a long
 long goLong(Mechanism* d) {
 	goLongFuncPtr funct = d->class->lookup[0]; // TODO: Check if length of lookup is at least 1
-	if (NULL != funct ){ 
+	if (funct){ 
 		return (funct)(d);
 	} else {
 		return 0;
@@ -50,7 +50,7 @@ long goLong(Mechanism* d) {
 // Run any mechanism as a float
 float goFloat(Mechanism* d) {
 	goFloatFuncPtr funct = d->class->lookup[1]; // TODO: Check if length of lookup is at least 2
-	if (NULL != funct) {
+	if (funct) {
 		return (funct)(d);
 	} else {
 		return 0;
@@ -60,8 +60,10 @@ float goFloat(Mechanism* d) {
 // Free any mechanism
 void mechFree(Mechanism* d) {
 	freeFuncPtr funct = d->class->delete;
-	if (NULL != funct) {
-		(funct)(d);
+	if (funct) {
+		if (d) {
+			(funct)(d);
+		}
 	} else {
 		// WARNING: Class does not contain a delete
 	}
@@ -76,17 +78,27 @@ typedef struct {
 } NumData;
 
 void numFree(Mechanism* mech) {
-	free (mech->data);
+	if (mech) {
+		free (mech->data);
+	}
 }
 
 long numGoLong(Mechanism* mech) {
-	NumData* data = (NumData*)mech->data;
-	return data->val;
+	if (mech) {
+		NumData* data = (NumData*)mech->data;
+		return data->val;
+	} else {
+		return 0; // TODO: Define NaN
+	}
 };
 
 float numGoFloat(Mechanism* mech) {
-	NumData* data = (NumData*)mech->data;
-	return (float)data->val;
+	if (mech) {
+		NumData* data = (NumData*)mech->data;
+		return (float)data->val;
+	} else {
+		return 0; // TODO: Define NaN	
+	}
 };
 
 Class numClass = { &numFree, { &numGoLong, &numGoFloat} };
@@ -100,7 +112,6 @@ Mechanism* num(long d) {
 	return mech;
 }
 
-
 // ----------------------------------------------------------------------------
 // SingleArg base Mechanism
 // ----------------------------------------------------------------------------
@@ -109,15 +120,16 @@ typedef struct {
 } SingleArgData;
 
 void singleArgFree(Mechanism* mech) {
-	SingleArgData* data = (SingleArgData*)mech->data;
-	if (NULL != data) {
-		mechFree(data->left);
-	} else {
-		// WARNING!!!
+	if (mech) {
+		SingleArgData* data = (SingleArgData*)mech->data;
+		if (data) {
+			mechFree(data->left);
+		} else {
+			// WARNING!!!
+		}
+		free (mech->data);
 	}
-	free (mech->data);
 }
-
 
 // ----------------------------------------------------------------------------
 // DualArg base Mechanism
@@ -129,7 +141,7 @@ typedef struct {
 
 void dualArgFree(Mechanism* mech) {
 	DualArgData* data = (DualArgData*)mech->data;
-	if (NULL != data) {
+	if (data) {
 		mechFree(data->left);
 		mechFree(data->right);
 	} else {
@@ -144,7 +156,7 @@ void dualArgFree(Mechanism* mech) {
 
 long addGoLong(Mechanism* mech) {
 	DualArgData* data = (DualArgData*)mech->data;
-	if (NULL != data) {
+	if (data) {
 		return goLong(data->left) + goLong(data->right);
 	} else {
 		return 0;
@@ -153,7 +165,7 @@ long addGoLong(Mechanism* mech) {
 
 float addGoFloat(Mechanism* mech) {
 	DualArgData* data = (DualArgData*)mech->data;
-	if (NULL != data) {
+	if (data) {
 		return goFloat(data->left) + goFloat(data->right);
 	} else {
 		return 0;
@@ -180,7 +192,7 @@ Mechanism* add(Mechanism* left, Mechanism* right) {
 
 long writeLnGoLong(Mechanism* mech) {
 	SingleArgData* data = (SingleArgData*)mech->data;
-	if (NULL != data) {
+	if (data) {
 		long result = goLong(data->left);
 		printf("%li\n", result);
 		return result;
@@ -192,7 +204,7 @@ long writeLnGoLong(Mechanism* mech) {
 
 float writeLnGoFloat(Mechanism* mech) {
 	SingleArgData* data = (SingleArgData*)mech->data;
-	if (NULL != data) {
+	if (data) {
 		float result = goFloat(data->left);
 		printf("%f\n", result);
 		return result;
