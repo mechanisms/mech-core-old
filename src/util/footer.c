@@ -1,13 +1,13 @@
 int main() {
-	Mechanism* num23 = num(23);
+	MechanismPtr num23 = num(23);
 	printf("num23 as a long is %li and float is %f.\n", goLong(num23), goFloat(num23));
 	mechFree(num23);
 
-	Mechanism* addTwo = add(num(12), num(5));
+	MechanismPtr addTwo = add(num(12), num(5));
 	printf("addTwo as a long is %li and float is %f.\n", goLong(addTwo), goFloat(addTwo));
 	mechFree(addTwo);
 
-	Mechanism* writeAdd =
+	MechanismPtr writeAdd =
 	writeLn(
 		add(
 			add(num(2), num(3)),
@@ -16,6 +16,8 @@ int main() {
 	);
 	goLong(writeAdd);
 	goFloat(writeAdd);
+
+
 	mechFree(writeAdd);
 
 	return 0;

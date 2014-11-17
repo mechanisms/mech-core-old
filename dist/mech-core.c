@@ -7,10 +7,12 @@
 #include <stdio.h>
 
 // See Mechanism below
-typedef struct Mechanism Mechanism;
+typedef struct MechanismStruct MechanismStruct;
+
+typedef MechanismStruct* MechanismPtr;
 
 // Function signature to free a mechanism
-typedef void (*freeFuncPtr)(Mechanism*);
+typedef void (*freeFuncPtr)(MechanismPtr);
 
 // Class: Aggregates functions for a given type of Mechanism.
 // id - globally unique identifier for the class
@@ -28,18 +30,18 @@ typedef struct {
 // class - the class for this instance
 // parent - contains the parent mechanism instance
 // data - the data for this instance
-struct Mechanism {
+struct MechanismStruct {
 	Class* class;
-	Mechanism* parent;
+	MechanismPtr parent;
 	void* data;
 };
 
 // Function signatures
-typedef long (*goLongFuncPtr)(Mechanism*);
-typedef float (*goFloatFuncPtr)(Mechanism*);
+typedef long (*goLongFuncPtr)(MechanismPtr);
+typedef float (*goFloatFuncPtr)(MechanismPtr);
 
 // Run any mechanism as a long
-long goLong(Mechanism* mech) {
+long goLong(MechanismPtr mech) {
 	if (mech) {
 		assert(mech->class);
 		assert(mech->class->lookup);
@@ -52,7 +54,7 @@ long goLong(Mechanism* mech) {
 }
 
 // Run any mechanism as a float
-float goFloat(Mechanism* mech) {
+float goFloat(MechanismPtr mech) {
 	if (mech) {
 		assert(mech->class);
 		assert(mech->class->lookup);
@@ -65,7 +67,7 @@ float goFloat(Mechanism* mech) {
 }
 
 // Free any mechanism
-void mechFree(Mechanism* mech) {
+void mechFree(MechanismPtr mech) {
 	if (mech) {
 		assert(mech->class);
 		assert(mech->class->delete);
@@ -80,15 +82,15 @@ void mechFree(Mechanism* mech) {
 // ----------------------------------------------------------------------------
 typedef struct {
 	long val;
-} NumData;
+} NumData, *NumDataPtr;
 
-void numFree(Mechanism* mech) {
+void numFree(MechanismPtr mech) {
 	if (mech && mech->data) {
 		free (mech->data);
 	}
 }
 
-long numGoLong(Mechanism* mech) {
+long numGoLong(MechanismPtr mech) {
 	if (mech && mech->data) {
 		NumData* data = (NumData*)mech->data;
 		return data->val;
@@ -97,7 +99,7 @@ long numGoLong(Mechanism* mech) {
 	}
 };
 
-float numGoFloat(Mechanism* mech) {
+float numGoFloat(MechanismPtr mech) {
 	if (mech && mech->data) {
 		NumData* data = (NumData*)mech->data;
 		return (float)data->val;
@@ -108,8 +110,8 @@ float numGoFloat(Mechanism* mech) {
 
 Class numClass = { &numFree, { &numGoLong, &numGoFloat} };
 
-Mechanism* num(long d) {
-	Mechanism* mech = malloc(sizeof(Mechanism));
+MechanismPtr num(long d) {
+	MechanismPtr mech = malloc(sizeof(MechanismStruct));
 	if (mech) {
 		NumData* data = malloc(sizeof(NumData));
 		if (data) {
@@ -128,10 +130,10 @@ Mechanism* num(long d) {
 // SingleArg base Mechanism
 // ----------------------------------------------------------------------------
 typedef struct {
-	Mechanism* left;
+	MechanismPtr left;
 } SingleArgData;
 
-void singleArgFree(Mechanism* mech) {
+void singleArgFree(MechanismPtr mech) {
 	if (mech && mech->data) {
 		SingleArgData* data = (SingleArgData*)mech->data;
 		if (data->left) {
@@ -145,11 +147,11 @@ void singleArgFree(Mechanism* mech) {
 // DualArg base Mechanism
 // ----------------------------------------------------------------------------
 typedef struct {
-	Mechanism* left;
-	Mechanism* right;
+	MechanismPtr left;
+	MechanismPtr right;
 } DualArgData;
 
-void dualArgFree(Mechanism* mech) {
+void dualArgFree(MechanismPtr mech) {
 	if (mech && mech->data) {
 		DualArgData* data = (DualArgData*)mech->data;
 		if (data->left) {
@@ -166,7 +168,7 @@ void dualArgFree(Mechanism* mech) {
 // Add Mechanism
 // ----------------------------------------------------------------------------
 
-long addGoLong(Mechanism* mech) {
+long addGoLong(MechanismPtr mech) {
 	if (mech && mech->data) {
 		DualArgData* data = (DualArgData*)mech->data;
 		return goLong(data->left) + goLong(data->right);
@@ -175,7 +177,7 @@ long addGoLong(Mechanism* mech) {
 	}
 };
 
-float addGoFloat(Mechanism* mech) {
+float addGoFloat(MechanismPtr mech) {
 	if (mech && mech->data) {
 		DualArgData* data = (DualArgData*)mech->data;
 		return goFloat(data->left) + goFloat(data->right);
@@ -186,8 +188,8 @@ float addGoFloat(Mechanism* mech) {
 
 Class addClass = { &dualArgFree, { &addGoLong, &addGoFloat} };
 
-Mechanism* add(Mechanism* left, Mechanism* right) {
-	Mechanism* mech = malloc(sizeof(Mechanism));
+MechanismPtr add(MechanismPtr left, MechanismPtr right) {
+	MechanismPtr mech = malloc(sizeof(MechanismStruct));
 	if (mech) {
 		DualArgData* data = malloc(sizeof(DualArgData));
 		if (data) {
@@ -213,7 +215,7 @@ Mechanism* add(Mechanism* left, Mechanism* right) {
 // writeLn Mechanism
 // ----------------------------------------------------------------------------
 
-long writeLnGoLong(Mechanism* mech) {
+long writeLnGoLong(MechanismPtr mech) {
 	if (mech && mech->data) {
 		SingleArgData* data = (SingleArgData*)mech->data;
 		long result = goLong(data->left);
@@ -224,7 +226,7 @@ long writeLnGoLong(Mechanism* mech) {
 	}
 };
 
-float writeLnGoFloat(Mechanism* mech) {
+float writeLnGoFloat(MechanismPtr mech) {
 	if (mech && mech->data) {	
 		SingleArgData* data = (SingleArgData*)mech->data;
 		float result = goFloat(data->left);
@@ -237,8 +239,8 @@ float writeLnGoFloat(Mechanism* mech) {
 
 Class writeLnClass = { &singleArgFree, { &writeLnGoLong, &writeLnGoFloat} };
 
-Mechanism* writeLn(Mechanism* text) {
-	Mechanism* mech = malloc(sizeof(Mechanism));
+MechanismPtr writeLn(MechanismPtr text) {
+	MechanismPtr mech = malloc(sizeof(MechanismStruct));
 	if (mech) {
 		SingleArgData* data = malloc(sizeof(SingleArgData));
 		if (data) {
@@ -257,15 +259,15 @@ Mechanism* writeLn(Mechanism* text) {
 }
 
 int main() {
-	Mechanism* num23 = num(23);
+	MechanismPtr num23 = num(23);
 	printf("num23 as a long is %li and float is %f.\n", goLong(num23), goFloat(num23));
 	mechFree(num23);
 
-	Mechanism* addTwo = add(num(12), num(5));
+	MechanismPtr addTwo = add(num(12), num(5));
 	printf("addTwo as a long is %li and float is %f.\n", goLong(addTwo), goFloat(addTwo));
 	mechFree(addTwo);
 
-	Mechanism* writeAdd =
+	MechanismPtr writeAdd =
 	writeLn(
 		add(
 			add(num(2), num(3)),
@@ -274,6 +276,8 @@ int main() {
 	);
 	goLong(writeAdd);
 	goFloat(writeAdd);
+
+
 	mechFree(writeAdd);
 
 	return 0;
