@@ -69,9 +69,9 @@ void mechFree(Mechanism* mech) {
 	if (mech) {
 		assert(mech->class);
 		assert(mech->class->delete);
-	  freeFuncPtr funct = mech->class->delete;
+		freeFuncPtr funct = mech->class->delete;
 		(funct)(mech);
-	  free(mech);
+		free(mech);
 	}
 }
 
@@ -151,14 +151,14 @@ typedef struct {
 
 void dualArgFree(Mechanism* mech) {
 	if (mech && mech->data) {
-  	DualArgData* data = (DualArgData*)mech->data;
-  	if (data->left) {
-	  	mechFree(data->left);		
-  	}
-	  if (data->right) {
-	  	mechFree(data->right);
-  	}
-	  free (mech->data);
+		DualArgData* data = (DualArgData*)mech->data;
+		if (data->left) {
+			mechFree(data->left);		
+		}
+		if (data->right) {
+			mechFree(data->right);
+		}
+		free (mech->data);
 	 }
 }
 
@@ -168,7 +168,7 @@ void dualArgFree(Mechanism* mech) {
 
 long addGoLong(Mechanism* mech) {
 	if (mech && mech->data) {
-  	DualArgData* data = (DualArgData*)mech->data;
+		DualArgData* data = (DualArgData*)mech->data;
 		return goLong(data->left) + goLong(data->right);
 	} else {
 		return 0; // TODO: Define NaN	
@@ -193,11 +193,11 @@ Mechanism* add(Mechanism* left, Mechanism* right) {
 		if (data) {
 			data->left = left;
 			if (left) {
-		  	left->parent = mech;
-		  }
+				left->parent = mech;
+			}
 			data->right = right;  
 			if (right) {
-			  right->parent = mech;
+				right->parent = mech;
 			}
 			mech->class = &addClass;
 			mech->data = data;
@@ -244,7 +244,7 @@ Mechanism* writeLn(Mechanism* text) {
 		if (data) {
 			data->left = text;
 			if (text) {
-			  text->parent = mech;
+				text->parent = mech;
 			}
 			mech->class = &writeLnClass;
 			mech->data = data;
