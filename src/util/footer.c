@@ -7,13 +7,16 @@ int main() {
 	printf("addTwo as a long is %li and float is %f.\n", goLong(addTwo), goFloat(addTwo));
 	mechFree(addTwo);
 
-	Mechanism* addAlot =
+	Mechanism* writeAdd =
+	writeLn(
 		add(
 			add(num(2), num(3)),
 			add(num(4), num(5))
-		);
-	printf("addAlot as a long is %li and float is %f.\n", goLong(addAlot), goFloat(addAlot));
-	mechFree(addAlot);
+		)
+	);
+	goLong(writeAdd);
+	goFloat(writeAdd);
+	mechFree(writeAdd);
 
 	return 0;
 }

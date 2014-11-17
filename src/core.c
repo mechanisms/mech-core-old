@@ -1,5 +1,3 @@
-
-
 // See Mechanism below
 typedef struct Mechanism Mechanism;
 
@@ -96,6 +94,25 @@ Mechanism* num(long d) {
 	return mech;
 }
 
+
+// ----------------------------------------------------------------------------
+// SingleArg base Mechanism
+// ----------------------------------------------------------------------------
+typedef struct {
+	Mechanism* left;
+} SingleArgData;
+
+void singleArgFree(Mechanism* mech) {
+	SingleArgData* data = (SingleArgData*)mech->data;
+	if (NULL != data) {
+		mechFree(data->left);
+	} else {
+		// WARNING!!!
+	}
+	free (mech->data);
+}
+
+
 // ----------------------------------------------------------------------------
 // DualArg base Mechanism
 // ----------------------------------------------------------------------------
@@ -151,4 +168,42 @@ Mechanism* add(Mechanism* left, Mechanism* right) {
 	return mech;
 }
 
+// ----------------------------------------------------------------------------
+// writeLn Mechanism
+// ----------------------------------------------------------------------------
 
+long writeLnGoLong(Mechanism* mech) {
+	SingleArgData* data = (SingleArgData*)mech->data;
+	if (NULL != data) {
+		long result = goLong(data->left);
+		printf("%li\n", result);
+		return result;
+	} else {
+		printf("0\n");
+		return 0;
+	}
+};
+
+float writeLnGoFloat(Mechanism* mech) {
+	SingleArgData* data = (SingleArgData*)mech->data;
+	if (NULL != data) {
+		float result = goFloat(data->left);
+		printf("%f\n", result);
+		return result;
+	} else {
+		printf("0.00\n");
+		return 0;
+	}
+};
+
+Class writeLnClass = { 2, &singleArgFree, { &writeLnGoLong, &writeLnGoFloat} };
+
+Mechanism* writeLn(Mechanism* text) {
+	Mechanism* mech = malloc(sizeof(Mechanism));
+	SingleArgData* data = malloc(sizeof(SingleArgData));
+	data->left = text;
+	text->parent = mech;
+	mech->class = &writeLnClass;
+	mech->data = data;
+	return mech;
+}
