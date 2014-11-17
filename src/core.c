@@ -88,12 +88,12 @@ float numGoFloat(Mechanism* mech) {
 Class numClass = { 1, &numFree, { &numGoLong, &numGoFloat} };
 
 Mechanism* num(long d) {
+	Mechanism* mech = malloc(sizeof(Mechanism));
 	NumData* data = malloc(sizeof(NumData));
 	data->val = d;
-	Mechanism* mechInstance = malloc(sizeof(Mechanism));
-	mechInstance->class = &numClass;
-	mechInstance->data = data;
-	return mechInstance;
+	mech->class = &numClass;
+	mech->data = data;
+	return mech;
 }
 
 // ----------------------------------------------------------------------------
@@ -140,13 +140,15 @@ float addGoFloat(Mechanism* mech) {
 Class addClass = { 2, &dualArgFree, { &addGoLong, &addGoFloat} };
 
 Mechanism* add(Mechanism* left, Mechanism* right) {
+	Mechanism* mech = malloc(sizeof(Mechanism));
 	DualArgData* data = malloc(sizeof(DualArgData));
 	data->left = left;
+	left->parent = mech;
 	data->right = right;  
-	Mechanism* mechInstance = malloc(sizeof(Mechanism));
-	mechInstance->class = &addClass;
-	mechInstance->data = data;
-	return mechInstance;
+	right->parent = mech;
+	mech->class = &addClass;
+	mech->data = data;
+	return mech;
 }
 
 
