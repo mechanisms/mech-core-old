@@ -50,7 +50,7 @@ float goFloat(MechanismPtr mech) {
 	if (mech) {
 		assert(mech->class);
 		assert(mech->class->lookup);
-		assert(mech->class->lookup[0]);
+		assert(mech->class->lookup[1]);
 		goFloatFuncPtr funct = mech->class->lookup[1]; // TODO: Check if length of lookup is at least 2
 		return (funct)(mech);
 	} else {
