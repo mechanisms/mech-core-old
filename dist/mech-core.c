@@ -59,15 +59,15 @@ float goFloat(Mechanism* d) {
 
 // Free any mechanism
 void mechFree(Mechanism* d) {
-	freeFuncPtr funct = d->class->delete;
-	if (funct) {
-		if (d) {
+	if (d) {
+	  freeFuncPtr funct = d->class->delete;
+	  if (funct) {
 			(funct)(d);
-		}
-	} else {
-		// WARNING: Class does not contain a delete
+	  } else {
+  		// WARNING: Class does not contain a delete
+	  }
+	  free(d);
 	}
-	free(d);
 }
 
 // ----------------------------------------------------------------------------
